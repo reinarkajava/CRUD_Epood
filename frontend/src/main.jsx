@@ -1,30 +1,40 @@
-// src/App.jsx
+// frontend/src/App.jsx
 import { useState, useEffect } from 'react';
 
-// Kontrollige seda URL-i! See peab viitama teie backend'i pordile.
-const API_URL = 'http://localhost:3000/api/products'; 
-
 function App() {
-  const [products, setProducts] = useState(null); // Kasutame nulli, mitte []
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
+      // Kasuta try...catch plokki vigade püüdmiseks
       try {
-        const response = await fetch(API_URL);
+        const url = 'http://localhost:3000/api/products';
+        console.log(`Fetching products from: ${url}`);
+        
+        const response = await fetch(url); 
 
+        // Kontrolli HTTP staatust
         if (!response.ok) {
-          // Kui staatus ei ole OK, siis on tegemist tõrgega (nt. 404, 500)
-          throw new Error(`HTTP Error: ${response.status} from ${API_URL}`);
+          // Viska viga, kui staatus ei ole 200 (OK)
+          throw new Error(`HTTP error! Status: ${response.status}. Could not reach backend.`);
         }
 
         const data = await response.json();
         
-        setProducts(data); // Andmed laeti edukalt
+        // Veendu, et saadud data on massiiv
+        if (Array.isArray(data)) {
+            setProducts(data);
+        } else {
+            console.error("API did not return an array:", data);
+            throw new Error("Received invalid data format from API.");
+        }
+        
       } catch (e) {
-        console.error("Viga andmete laadimisel:", e);
-        setError(e.message || "Tundmatu viga. Vaata konsooli.");
+        console.error("Päring ebaõnnestus:", e);
+        // Salvesta viga, et seda kuvada
+        setError(e.message || "Tundmatu viga andmete laadimisel.");
       } finally {
         setLoading(false);
       }
@@ -33,37 +43,42 @@ function App() {
     fetchProducts();
   }, []); 
 
-  // --- Renderdamine ---
+  // --- Renderdamise loogika ---
 
+  // 1. Laadimise olek
   if (loading) {
-    return <h1 style={{ color: 'blue' }}>Laen tooteid... (Kontrollin {API_URL})</h1>;
-  }
-
-  if (error) {
     return (
-      <div style={{ color: 'red', border: '1px solid red', padding: '10px' }}>
-        <h1>❌ Viga! Backend'i ei leitud. ❌</h1>
-        <p>Detail: {error}</p>
-        <p>Kas backend töötab aadressil http://localhost:3000?</p>
+      <div style={{ padding: '20px', color: 'blue' }}>
+        <h2>Laen tooteid...</h2>
+        <p>Palun oodake, kuni päring teostatakse backend'i.</p>
       </div>
     );
   }
 
-  // Kui products on null, aga loading on false, on see viga
-  if (!products) {
-    return <h1 style={{ color: 'orange' }}>Viga: Toodete massiiv on null.</h1>;
+  // 2. Vea olek (kui API päring ebaõnnestus)
+  if (error) {
+    return (
+      <div style={{ padding: '20px', color: 'red', border: '1px solid red' }}>
+        <h2>❌ Viga Andmete Laadimisel ❌</h2>
+        <p>Palun kontrollige, kas backend töötab aadressil **http://localhost:3000** ja kas teenus on kättesaadav.</p>
+        <p>Detailne viga: **{error}**</p>
+      </div>
+    );
   }
-  
+
+  // 3. Andmete olek
   return (
     <div style={{ padding: '20px' }}>
-      <h1>E-poe Tooted ({products.length})</h1>
+      <h1>E-poe Tootevalik 🛒</h1>
       {products.length === 0 ? (
-        <p style={{ color: 'gray' }}>Toodete massiiv on tühi. Kontrolli seemendust.</p>
+        <p style={{ color: 'orange' }}>Tooteid ei leitud. Andmebaas võib olla tühi või päring ebaõnnestus vaikselt.</p>
       ) : (
-        <ul>
+        <ul style={{ listStyleType: 'none', padding: 0 }}>
           {products.map(product => (
-            <li key={product.id || product.name}>
-              {product.name} - {product.price} €
+            // Kasuta product.id kindlasti, et vältida Reacti hoiatust
+            <li key={product.id} style={{ border: '1px solid #ddd', margin: '10px 0', padding: '10px', borderRadius: '4px' }}>
+              <h3>{product.name}</h3>
+              <p>Hind: **{product.price} €**</p>
             </li>
           ))}
         </ul>
