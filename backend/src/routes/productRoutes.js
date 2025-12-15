@@ -1,8 +1,10 @@
+// backend/src/routes/productRoutes.js
+import express from 'express';
+import { getProducts } from '../controllers/productController.js';
 
-import { Router } from 'express';
-import { create } from '../controllers/productController.js';
+const router = express.Router();
 
-const router = Router();
-router.post('/', create);
+// GET /api/products
+router.get('/', getProducts);
 
 export default router;
