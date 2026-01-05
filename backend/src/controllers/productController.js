@@ -12,6 +12,12 @@ export const getProducts = async (req, res) => {
 export const addProduct = async (req, res) => {
     try {
         const newProduct = await productService.createProduct(req.body);
+        // Võtame io objekti app-ist ja saadame teavituse
+        const io = req.app.get('socketio');
+        io.emit('product_added', { 
+            message: `Uus toode "${newProduct.name}" on lisatud!`,
+            product: newProduct 
+        });
         res.status(201).json(newProduct);
     } catch (error) {
         res.status(400).json({ message: error.message });

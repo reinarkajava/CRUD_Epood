@@ -23,6 +23,9 @@ const io = new Server(server, {
     }
 });
 
+// Socket.IO instantsi salvestamine Expressi rakendusse
+app.set('socketio', io);
+
 // Express CORS seadistus (lubab frontend'i päringud)
 app.use(cors({
     origin: "http://localhost:5173"

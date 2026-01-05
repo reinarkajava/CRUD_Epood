@@ -1,19 +1,28 @@
 import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 import './App.css';
 
-
+// Ühendame Socket.IO-ga (väljaspool komponenti)
+const socket = io('http://localhost:3000');
 
 function App() {
   const [products, setProducts] = useState([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [notification, setNotification] = useState(''); // Uus state teavituse jaoks
 
   useEffect(() => {
+    socket.on('product_added', (data) => {
+      setNotification(data.message);
+      // Kaotame teavituse 5 sekundi pärast ära
+      setTimeout(() => setNotification(''), 5000);
+    });
     // Teeme päringu backendi API-sse
     fetch('http://localhost:3000/api/products')
       .then((res) => res.json())
       .then((data) => setProducts(data))
       .catch((err) => console.error("Viga andmete pärimisel:", err));
+      return () => socket.off('product_added'); // Puhastame mälu
   }, []);
   
   // Uue toote lisamise funktsioon
@@ -51,6 +60,21 @@ const handleDelete = (id) => {
 
   return (
     <div className="App">
+      {/* 2. Kuva teavitus ekraani ülaosas, kui see on olemas */}
+      {notification && (
+        <div style={{ 
+          backgroundColor: '#4CAF50', 
+          color: 'white', 
+          padding: '10px', 
+          position: 'fixed', 
+          top: '10px', 
+          right: '10px', 
+          borderRadius: '5px',
+          zIndex: 1000 
+        }}>
+          {notification}
+        </div>
+      )}
       <h1>E-poe Tooted</h1>
 {/* 3. Vorm uue toote lisamiseks */}
       <section style={{ marginBottom: '40px', padding: '20px', border: '1px solid #eee', borderRadius: '10px' }}>
