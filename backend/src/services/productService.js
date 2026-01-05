@@ -1,6 +1,16 @@
+import productRepository from '../repositories/productRepository.js';
 
-import { Product } from '../models/Product.js';
+export const getAllProducts = async () => {
+    const products = await productRepository.findAll();
+    
+    // NÄIDE ÄRIREEGLIST: Lisame igale tootele dünaamilise "stockStatus"
+    return products.map(p => ({
+        ...p.toJSON(),
+        isExpensive: p.price > 15 ? 'Premium' : 'Budget'
+    }));
+};
 
-export const createProduct = async (data) => {
-  return Product.create(data);
+export const createNewProduct = async (data) => {
+    if (data.price < 0) throw new Error("Hind ei saa olla negatiivne!");
+    return await productRepository.create(data);
 };
