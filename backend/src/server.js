@@ -46,7 +46,7 @@ const startServer = async () => {
         await connectDB(); // Kontrolli andmebaasi ühendust (db.js-ist)
         
         // Sünkroniseeri mudelid (loob tabeli, kui seda pole, või muudab seda)
-        await sequelize.sync({ force: true }); //nüüd andmed säilivad
+        await sequelize.sync({ force: false }); //nüüd andmed säilivad
         
         await seedProducts(); // Seemenda andmed
 
