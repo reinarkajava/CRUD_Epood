@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import './App.css';
 
-// Socket.IO connection
+const CART_KEY = 'cartId';
+
+const getCartId = () => localStorage.getItem(CART_KEY);
+const setCartId = (id) => localStorage.setItem(CART_KEY, id);
+
+// Ühendame Socket.IO-ga (väljaspool komponenti)
 const socket = io('http://localhost:3000');
 
 // --------------------
@@ -113,6 +118,28 @@ function App() {
   // --------------------
   // Product handlers
   // --------------------
+  // Initialize cart
+  useEffect(() => {
+    const initCart = async () => {
+      let cartId = getCartId();
+
+      if (!cartId) {
+        const res = await fetch('http://localhost:3000/api/carts', { method: 'POST' });
+        const cartData = await res.json();
+        cartId = cartData.id;
+        setCartId(cartId);
+      }
+
+      // Load cart items
+      const res = await fetch(`http://localhost:3000/api/carts/${cartId}`);
+      const data = await res.json();
+      setCart(data.Products || []);
+    };
+
+    initCart();
+  }, []);
+  
+  // Uue toote lisamise funktsioon
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -129,18 +156,40 @@ function App() {
       })
       .catch(err => console.error("Viga toote lisamisel:", err));
   };
-
   const handleDelete = (id) => {
-    if (window.confirm('Kas oled kindel, et soovid selle toote kustutada?')) {
-      fetch(`http://localhost:3000/api/products/${id}`, {
-        method: 'DELETE',
-      })
-        .then(() => {
-          setProducts(products.filter(product => product.id !== id));
-        })
-        .catch(err => console.error("Viga kustutamisel:", err));
-    }
+      if (window.confirm('Kas oled kindel, et soovid selle toote kustutada?')) {
+          fetch(`http://localhost:3000/api/products/${id}`, {
+              method: 'DELETE',
+          })
+          .then(() => {
+              // Eemaldame toote kohalikust staadiumist (state), et see kaoks ekraanilt kohe
+              setProducts(products.filter(product => product.id !== id));
+          })
+          .catch(err => console.error("Viga kustutamisel:", err));
+      }
   };
+
+  // Add product to cart
+  const handleAddToCart = async (productId) => {
+    const cartId = getCartId();
+
+    await fetch(`http://localhost:3000/api/carts/${cartId}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, quantity: 1 })
+    });
+
+    // Reload cart
+    const res = await fetch(`http://localhost:3000/api/carts/${cartId}`);
+    const data = await res.json();
+    setCart(data.Products || []);
+
+    const product = products.find(p => p.id === productId);
+    setNotification(`Toode "${product.name}" lisati ostukorvi!`);
+    setTimeout(() => setNotification(''), 5000);
+  };
+
+  
 
   // --------------------
   // UI
@@ -236,33 +285,24 @@ function App() {
             >
               <h2>{product.name}</h2>
               <p>Baashind: {product.price} €</p>
-
-              {product.status && (
-                <p><strong>Staatus:</strong> {product.status}</p>
-              )}
-
-              {product.discountPrice && (
-                <p style={{ color: 'green' }}>
-                  Soodushind: {product.discountPrice} €
-                </p>
-              )}
-
-              <button>Lisa ostukorvi</button>
-
-              <button
-                onClick={() => handleDelete(product.id)}
-                style={{
-                  backgroundColor: '#ff4d4d',
-                  color: 'white',
-                  marginTop: '10px',
-                  border: 'none',
-                  padding: '8px',
-                  borderRadius: '5px',
-                  cursor: 'pointer'
-                }}
-              >
-                Kustuta toode
-              </button>
+              {/* Kuvame ka service-kihis arvutatud staatuse ja soodushinna, kui need on olemas */}
+              {product.status && <p><strong>Staatus:</strong> {product.status}</p>}
+              {product.discountPrice && <p style={{ color: 'green' }}>Soodushind: {product.discountPrice} €</p>}
+              <button onClick={() => handleAddToCart(product.id)}>Lisa ostukorvi</button>
+              <button 
+    onClick={() => handleDelete(product.id)} 
+    style={{ 
+        backgroundColor: '#ff4d4d', 
+        color: 'white', 
+        marginTop: '10px',
+        border: 'none',
+        padding: '8px',
+        borderRadius: '5px',
+        cursor: 'pointer'
+    }}
+>
+    Kustuta toode
+</button>
             </div>
           ))
         ) : (
