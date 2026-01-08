@@ -9,6 +9,7 @@ import { sequelize, connectDB } from './config/db.js';
 // 2. IMPORDIME mudeli (et see oleks defineeritud)
 import { Product } from './models/Product.js'; 
 import productRoutes from './routes/productRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
 import { seedProducts } from './config/seedProducts.js';
 
 const app = express();
@@ -32,6 +33,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/api/products', productRoutes);
+app.use('/api/carts', cartRoutes);
 
 io.on('connection', socket => {
   console.log('Client connected to Socket.IO');
@@ -44,7 +46,7 @@ const startServer = async () => {
         await connectDB(); // Kontrolli andmebaasi ühendust (db.js-ist)
         
         // Sünkroniseeri mudelid (loob tabeli, kui seda pole, või muudab seda)
-        await sequelize.sync({ force: false }); //nüüd andmed säilivad
+        await sequelize.sync({ force: true }); //nüüd andmed säilivad
         
         await seedProducts(); // Seemenda andmed
 

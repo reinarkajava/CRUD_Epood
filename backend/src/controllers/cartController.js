@@ -1,32 +1,51 @@
-import CartService from '../services/cart.service.js';
+import * as cartService from '../services/cartService.js';
 
-class CartController {
-    async createCart(req, res) {
-        const cart = await CartService.createCart();
+export const createCart = async (req, res) => {
+    try {
+        const cart = await cartService.createCart();
+        // IMPORTANT: return the cart JSON so frontend can get cart.id
         res.status(201).json(cart);
+    } catch (error) {
+        console.error('Viga ostukorvi loomisel:', error);
+        res.status(500).json({ message: 'Serveri viga' });
     }
+};
 
-    async getCart(req, res) {
-        const cart = await CartService.getCart(req.params.id);
-        res.json(cart);
+export const getCart = async (req, res) => {
+    try {
+        const cartId = req.params.id;
+        const cart = await cartService.getCart(cartId);
+
+        if (!cart) {
+            return res.status(404).json({ message: 'Ostukorv ei leitud' });
+        }
+
+        // Return cart including products
+        res.status(200).json(cart);
+    } catch (error) {
+        console.error('Viga ostukorvi hankimisel:', error);
+        res.status(500).json({ message: 'Serveri viga' });
     }
+};
 
-    async addProduct(req, res) {
+// Add product to cart
+export const addProductToCart = async (req, res) => {
+    try {
+        const cartId = req.params.id;          // cart ID from URL
         const { productId, quantity } = req.body;
-        await CartService.addToCart(req.params.id, productId, quantity);
-        res.status(204).end();
-    }
 
-    async updateQuantity(req, res) {
-        const { quantity } = req.body;
-        await CartService.updateQuantity(req.params.id, req.params.productId, quantity);
-        res.status(204).end();
-    }
+        if (!productId || quantity <= 0) {
+            return res.status(400).json({ message: 'Toode ja kogus on kohustuslikud' });
+        }
 
-    async removeProduct(req, res) {
-        await CartService.removeFromCart(req.params.id, req.params.productId);
-        res.status(204).end();
-    }
-}
+        await cartService.addProduct(cartId, productId, quantity);
 
-export default new CartController();
+        // Return updated cart
+        const cart = await cartService.getCart(cartId);
+        res.status(200).json(cart);
+    } catch (error) {
+        console.error('Viga toote lisamisel ostukorvi:', error);
+        res.status(500).json({ message: 'Serveri viga' });
+    }
+};
+

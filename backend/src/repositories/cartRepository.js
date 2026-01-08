@@ -26,12 +26,27 @@ class CartRepository {
         const product = await Product.findByPk(productId);
         if (!product) throw new Error('Product not found');
 
-        return await cart.addProduct(product, {
-            through: {
+        let item = await CartItem.findOne({
+            where: { CartId: cartId, ProductId: productId }
+        });
+
+        if (item) {
+            // If product already in cart, increment quantity
+            item.quantity += quantity;
+            await item.save();
+            return item;
+        } else {
+            // Otherwise, create a new CartItem
+            const product = await Product.findByPk(productId);
+            if (!product) throw new Error('Product not found');
+
+            return await CartItem.create({
+                CartId: cartId,
+                ProductId: productId,
                 quantity,
                 price: product.price
-            }
-        });
+            });
+        }
     }
 
     // Update quantity of a product in the cart

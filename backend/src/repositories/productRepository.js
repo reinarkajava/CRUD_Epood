@@ -15,6 +15,13 @@ class ProductRepository {
     // Kustutame toote ID alusel
     async delete(id) {
     return await Product.destroy({ where: { id } });
+    
+    }
+
+    // Kustutame toote ID alusel
+    async findById(id) {
+    return await Product.findOne({ where: { id } });
+    
 }
 }
 

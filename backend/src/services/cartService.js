@@ -1,25 +1,49 @@
-import CartRepository from '../repositories/cart.repository.js';
+import cartRepository from '../repositories/cartRepository.js';
+import productRepository from '../repositories/productRepository.js';
 
-class CartService {
-    async createCart() {
-        return await CartRepository.create();
+export const createCart = async () => {
+    return await cartRepository.create();
+};
+
+export const getCart = async (id) => {
+    if (!id) {
+        throw new Error('Ostukorvi ID on kohustuslik');
     }
 
-    async getCart(id) {
-        return await CartRepository.findById(id);
+    const cart = await cartRepository.findById(id);
+
+    if (!cart) {
+        return null;
     }
 
-    async addToCart(cartId, productId, quantity) {
-        return await CartRepository.addProduct(cartId, productId, quantity);
-    }
+    // Map products to plain objects (like productService)
+    const products = cart.Products.map(p => p.get({ plain: true }));
 
-    async updateQuantity(cartId, productId, quantity) {
-        return await CartRepository.updateQuantity(cartId, productId, quantity);
-    }
+    return {
+        ...cart.get({ plain: true }),
+        Products: products
+    };
+};
 
-    async removeFromCart(cartId, productId) {
-        return await CartRepository.removeProduct(cartId, productId);
-    }
-}
+export const addProduct = async (cartId, productId, quantity = 1) => {
+    if (!cartId) throw new Error('Ostukorvi ID on kohustuslik');
+    if (!productId) throw new Error('Toode on kohustuslik');
+    if (quantity <= 0) throw new Error('Kogus peab olema suurem kui 0');
 
-export default new CartService();
+    // Optional: Validate product exists
+    const product = await productRepository.findById(productId);
+    if (!product) throw new Error('Toode ei leitud');
+
+    // Add product via repository
+    await cartRepository.addProduct(cartId, productId, quantity);
+
+    // Return updated cart with products
+    const cart = await cartRepository.findById(cartId);
+
+    const products = cart.Products.map(p => p.get({ plain: true }));
+
+    return {
+        ...cart.get({ plain: true }),
+        Products: products
+    };
+};
