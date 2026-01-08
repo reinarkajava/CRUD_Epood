@@ -3,12 +3,10 @@ import { io } from 'socket.io-client';
 import './App.css';
 
 const CART_KEY = 'cartId';
+const socket = io('http://localhost:3000');
 
 const getCartId = () => localStorage.getItem(CART_KEY);
 const setCartId = (id) => localStorage.setItem(CART_KEY, id);
-
-// Ühendame Socket.IO-ga (väljaspool komponenti)
-const socket = io('http://localhost:3000');
 
 // --------------------
 // Dummy Login Component
@@ -21,36 +19,22 @@ function Login({ onLogin }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Block admin/admin
     if (username === 'admin' && password === 'admin') {
       setError('Admin login is not allowed.');
       return;
     }
 
-    // Allow everything else
     onLogin();
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      height: '100vh',
-      justifyContent: 'center',
-      alignItems: 'center'
-    }}>
+    <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>
       <form
         onSubmit={handleSubmit}
-        style={{
-          padding: '30px',
-          border: '1px solid #ccc',
-          borderRadius: '10px',
-          minWidth: '300px'
-        }}
+        style={{ padding: '30px', border: '1px solid #ccc', borderRadius: '10px', minWidth: '300px' }}
       >
         <h2>Login</h2>
-
         {error && <p style={{ color: 'red' }}>{error}</p>}
-
         <input
           placeholder="Username"
           value={username}
@@ -58,7 +42,6 @@ function Login({ onLogin }) {
           required
           style={{ width: '100%', marginBottom: '10px' }}
         />
-
         <input
           type="password"
           placeholder="Password"
@@ -67,26 +50,29 @@ function Login({ onLogin }) {
           required
           style={{ width: '100%', marginBottom: '10px' }}
         />
-
-        <button type="submit" style={{ width: '100%' }}>
-          Login
-        </button>
+        <button type="submit" style={{ width: '100%' }}>Login</button>
       </form>
     </div>
   );
 }
 
 // --------------------
-// Main App
+// Main App Component
 // --------------------
 function App() {
+  // --------------------
+  // Hooks at the top level
+  // --------------------
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [notification, setNotification] = useState('');
 
+  // --------------------
+  // Fetch products & listen for socket events
+  // --------------------
   useEffect(() => {
     socket.on('product_added', (data) => {
       setNotification(data.message);
@@ -102,24 +88,11 @@ function App() {
   }, []);
 
   // --------------------
-  // Auth Guard
+  // Initialize cart after login
   // --------------------
-  if (!isLoggedIn) {
-    return <Login onLogin={() => setIsLoggedIn(true)} />;
-  }
-
-  // --------------------
-  // Logout
-  // --------------------
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
-
-  // --------------------
-  // Product handlers
-  // --------------------
-  // Initialize cart
   useEffect(() => {
+    if (!isLoggedIn) return;
+
     const initCart = async () => {
       let cartId = getCartId();
 
@@ -130,73 +103,77 @@ function App() {
         setCartId(cartId);
       }
 
-      // Load cart items
       const res = await fetch(`http://localhost:3000/api/carts/${cartId}`);
       const data = await res.json();
       setCart(data.Products || []);
     };
 
     initCart();
-  }, []);
-  
-  // Uue toote lisamise funktsioon
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    fetch('http://localhost:3000/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, price: parseFloat(price) })
-    })
-      .then(res => res.json())
-      .then(newProduct => {
-        setProducts([...products, newProduct]);
-        setName('');
-        setPrice('');
-      })
-      .catch(err => console.error("Viga toote lisamisel:", err));
-  };
-  const handleDelete = (id) => {
-      if (window.confirm('Kas oled kindel, et soovid selle toote kustutada?')) {
-          fetch(`http://localhost:3000/api/products/${id}`, {
-              method: 'DELETE',
-          })
-          .then(() => {
-              // Eemaldame toote kohalikust staadiumist (state), et see kaoks ekraanilt kohe
-              setProducts(products.filter(product => product.id !== id));
-          })
-          .catch(err => console.error("Viga kustutamisel:", err));
-      }
-  };
-
-  // Add product to cart
-  const handleAddToCart = async (productId) => {
-    const cartId = getCartId();
-
-    await fetch(`http://localhost:3000/api/carts/${cartId}/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId, quantity: 1 })
-    });
-
-    // Reload cart
-    const res = await fetch(`http://localhost:3000/api/carts/${cartId}`);
-    const data = await res.json();
-    setCart(data.Products || []);
-
-    const product = products.find(p => p.id === productId);
-    setNotification(`Toode "${product.name}" lisati ostukorvi!`);
-    setTimeout(() => setNotification(''), 5000);
-  };
-
-  
+  }, [isLoggedIn]);
 
   // --------------------
-  // UI
+  // Handlers
+  // --------------------
+  const handleLogout = () => setIsLoggedIn(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:3000/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, price: parseFloat(price) })
+      });
+      const newProduct = await res.json();
+      setProducts([...products, newProduct]);
+      setName('');
+      setPrice('');
+    } catch (err) {
+      console.error("Viga toote lisamisel:", err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Kas oled kindel, et soovid selle toote kustutada?')) return;
+    try {
+      await fetch(`http://localhost:3000/api/products/${id}`, { method: 'DELETE' });
+      setProducts(products.filter(p => p.id !== id));
+    } catch (err) {
+      console.error("Viga kustutamisel:", err);
+    }
+  };
+
+  const handleAddToCart = async (productId) => {
+    const cartId = getCartId();
+    try {
+      await fetch(`http://localhost:3000/api/carts/${cartId}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity: 1 })
+      });
+
+      const res = await fetch(`http://localhost:3000/api/carts/${cartId}`);
+      const data = await res.json();
+      setCart(data.Products || []);
+
+      const product = products.find(p => p.id === productId);
+      setNotification(`Toode "${product.name}" lisati ostukorvi!`);
+      setTimeout(() => setNotification(''), 5000);
+    } catch (err) {
+      console.error("Viga ostukorvi lisamisel:", err);
+    }
+  };
+
+  // --------------------
+  // Conditional render: login page
+  // --------------------
+  if (!isLoggedIn) return <Login onLogin={() => setIsLoggedIn(true)} />;
+
+  // --------------------
+  // Main UI
   // --------------------
   return (
     <div className="App">
-      {/* Logout button */}
       <button
         onClick={handleLogout}
         style={{
@@ -232,32 +209,11 @@ function App() {
 
       <h1>E-poe Tooted</h1>
 
-      <section style={{
-        marginBottom: '40px',
-        padding: '20px',
-        border: '1px solid #eee',
-        borderRadius: '10px'
-      }}>
+      <section style={{ marginBottom: '40px', padding: '20px', border: '1px solid #eee', borderRadius: '10px' }}>
         <h2>Lisa uus toode</h2>
-
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}
-        >
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Toote nimi"
-            required
-          />
-          <input
-            type="number"
-            step="0.01"
-            value={price}
-            onChange={e => setPrice(e.target.value)}
-            placeholder="Hind"
-            required
-          />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Toote nimi" required />
+          <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="Hind" required />
           <button type="submit">Salvesta andmebaasi</button>
         </form>
       </section>
@@ -265,44 +221,29 @@ function App() {
       <hr />
 
       <h2>Tootenimekiri</h2>
-
-      <div style={{
-        display: 'flex',
-        gap: '20px',
-        flexWrap: 'wrap',
-        justifyContent: 'center'
-      }}>
+      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
         {products.length > 0 ? (
           products.map(product => (
-            <div
-              key={product.id}
-              style={{
-                border: '1px solid #ccc',
-                padding: '15px',
-                borderRadius: '8px',
-                minWidth: '200px'
-              }}
-            >
+            <div key={product.id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', minWidth: '200px' }}>
               <h2>{product.name}</h2>
               <p>Baashind: {product.price} €</p>
-              {/* Kuvame ka service-kihis arvutatud staatuse ja soodushinna, kui need on olemas */}
               {product.status && <p><strong>Staatus:</strong> {product.status}</p>}
               {product.discountPrice && <p style={{ color: 'green' }}>Soodushind: {product.discountPrice} €</p>}
               <button onClick={() => handleAddToCart(product.id)}>Lisa ostukorvi</button>
-              <button 
-    onClick={() => handleDelete(product.id)} 
-    style={{ 
-        backgroundColor: '#ff4d4d', 
-        color: 'white', 
-        marginTop: '10px',
-        border: 'none',
-        padding: '8px',
-        borderRadius: '5px',
-        cursor: 'pointer'
-    }}
->
-    Kustuta toode
-</button>
+              <button
+                onClick={() => handleDelete(product.id)}
+                style={{
+                  backgroundColor: '#ff4d4d',
+                  color: 'white',
+                  marginTop: '10px',
+                  border: 'none',
+                  padding: '8px',
+                  borderRadius: '5px',
+                  cursor: 'pointer'
+                }}
+              >
+                Kustuta toode
+              </button>
             </div>
           ))
         ) : (
