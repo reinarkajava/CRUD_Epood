@@ -1,4 +1,5 @@
 import * as cartService from '../services/cartService.js';
+import { CartItem } from '../models/CartItem.js';
 
 export const createCart = async (req, res) => {
     try {
@@ -49,3 +50,59 @@ export const addProductToCart = async (req, res) => {
     }
 };
 
+export const checkout = async (req, res) => {
+    try {
+        const { cartId } = req.params;
+        // Kustutame kõik seosed CartItem tabelist selle cartId puhul
+        await CartItem.destroy({ where: { CartId: cartId } });
+        
+        res.status(200).json({ message: 'Tellimus vormistatud!' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const removeFromCart = async (req, res) => {
+  try {
+    const { cartId, productId } = req.params;
+    
+    // Kustutame konkreetse toote sellest ostukorvist
+    const deleted = await CartItem.destroy({
+      where: {
+        CartId: cartId,
+        ProductId: productId
+      }
+    });
+
+if (deleted) {
+      return res.status(200).json({ message: 'Toode eemaldatud!' });
+    }
+    res.status(404).json({ message: 'Toodet ei leitud' });
+  } catch (error) {
+    console.error("Kustutamise viga:", error); // See näitab viga serveri terminalis
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateCartItemQuantity = async (req, res) => {
+  try {
+    const { cartId, productId } = req.params;
+    const { quantity } = req.body; // Uus soovitud kogus
+
+    const item = await CartItem.findOne({
+      where: { CartId: cartId, ProductId: productId }
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: 'Toodet ei leitud' });
+    }
+
+    item.quantity = quantity;
+    await item.save();
+    
+    res.status(200).json({ message: 'Kogus uuendatud' });
+  } catch (error) {
+    console.error("Uuendamise viga:", error);
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import './App.css';
+import Cart from './Cart';
 
 const CART_KEY = 'cartId';
 const socket = io('http://localhost:3000');
 
 const getCartId = () => localStorage.getItem(CART_KEY);
 const setCartId = (id) => localStorage.setItem(CART_KEY, id);
+
 
 // --------------------
 // Dummy Login Component
@@ -15,7 +17,7 @@ function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
+  
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -26,7 +28,7 @@ function Login({ onLogin }) {
 
     onLogin();
   };
-
+  
   return (
     <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>
       <form
@@ -69,6 +71,8 @@ function App() {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [notification, setNotification] = useState('');
+  const [showCart, setShowCart] = useState(false);
+  const [image, setImage] = useState('');
 
   // --------------------
   // Fetch products & listen for socket events
@@ -81,7 +85,9 @@ function App() {
 
     fetch('http://localhost:3000/api/products')
       .then(res => res.json())
-      .then(data => setProducts(data))
+      .then(data => {
+        console.table(data);
+        setProducts(data);})
       .catch(err => console.error("Viga andmete pärimisel:", err));
 
     return () => socket.off('product_added');
@@ -122,14 +128,23 @@ function App() {
       const res = await fetch('http://localhost:3000/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, price: parseFloat(price) })
+        body: JSON.stringify({ name, price: parseFloat(price), image})
       });
-      const newProduct = await res.json();
+      if (!res.ok) {
+      throw new Error('Serveri viga toote lisamisel');
+    }
+    const newProduct = await res.json();
+
+      if (newProduct && newProduct.id) {
       setProducts([...products, newProduct]);
       setName('');
       setPrice('');
+      setImage('');
+      }
     } catch (err) {
       console.error("Viga toote lisamisel:", err);
+      setNotification("Toote lisamine ebaõnnestus!");
+      setTimeout(() => setNotification(''), 5000);
     }
   };
 
@@ -172,84 +187,99 @@ function App() {
   // --------------------
   // Main UI
   // --------------------
-  return (
+return (
     <div className="App">
-      <button
-        onClick={handleLogout}
-        style={{
-          position: 'fixed',
-          top: '15px',
-          right: '15px',
-          backgroundColor: '#333',
-          color: 'white',
-          border: 'none',
-          padding: '8px 14px',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          zIndex: 1100
-        }}
-      >
-        Logout
-      </button>
+      {/* 1. Navigatsiooninupud (Sinu koodis juba olemas) */}
+      <div style={{ position: 'fixed', top: '15px', right: '15px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 1100, alignItems: 'flex-end' }}>
+        <button onClick={handleLogout} style={{ backgroundColor: '#333', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '5px', cursor: 'pointer', width: 'fit-content' }}>
+          Logout
+        </button>
+        <button onClick={() => setShowCart(!showCart)} style={{ backgroundColor: showCart ? '#444' : '#646cff', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '5px', cursor: 'pointer', width: 'fit-content', fontWeight: 'bold', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
+          {showCart ? '← Tagasi poodi' : `🛒 Ostukorv (${cart.length})`}
+        </button>
+      </div>
 
+      {/* 2. Teavitused (Sinu koodis juba olemas) */}
       {notification && (
-        <div style={{
-          backgroundColor: '#4CAF50',
-          color: 'white',
-          padding: '10px',
-          position: 'fixed',
-          top: '10px',
-          right: '100px',
-          borderRadius: '5px',
-          zIndex: 1000
-        }}>
+        <div style={{ backgroundColor: '#4CAF50', color: 'white', padding: '10px', position: 'fixed', top: '15px', right: '180px', borderRadius: '5px', zIndex: 1000 }}>
           {notification}
         </div>
       )}
 
-      <h1>E-poe Tooted</h1>
+      {/* 3. PEALKIRI MUUTUB VASTAVALT VAATELE */}
+      <h1>{showCart ? 'Sinu Ostukorv' : 'E-poe Tooted'}</h1>
 
-      <section style={{ marginBottom: '40px', padding: '20px', border: '1px solid #eee', borderRadius: '10px' }}>
-        <h2>Lisa uus toode</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Toote nimi" required />
-          <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="Hind" required />
-          <button type="submit">Salvesta andmebaasi</button>
-        </form>
-      </section>
+      {/* 4. SIIA LÄHEB SEE TINGIMUSLIK MUUDATUS */}
+      {showCart ? (
+        <Cart onCheckoutSuccess={() => {
+          setNotification("Tellimus esitatud! ✅");
+          setCart([]); // Tühjendab nupu peal oleva numbri
+          setShowCart(false); // Viib kasutaja pärast ostu poodi tagasi
+          setTimeout(() => setNotification(''), 5000);
+        }} />
+      ) : (
+        /* KUI OSTUKORV ON KINNI, NÄITA SEDA: */
+        <>
+          <section style={{ marginBottom: '40px', padding: '20px', border: '1px solid #eee', borderRadius: '10px' }}>
+            <h2>Lisa uus toode</h2>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Toote nimi" required />
+              <input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="Hind" required />
+              <input value={image} onChange={e => setImage(e.target.value)} placeholder="Pildi URL (nt. https://...)" />
+              <button type="submit">Salvesta andmebaasi</button>
+            </form>
+          </section>
 
-      <hr />
+          <hr />
 
-      <h2>Tootenimekiri</h2>
-      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
-        {products.length > 0 ? (
-          products.map(product => (
-            <div key={product.id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', minWidth: '200px' }}>
-              <h2>{product.name}</h2>
-              <p>Baashind: {product.price} €</p>
-              {product.status && <p><strong>Staatus:</strong> {product.status}</p>}
-              {product.discountPrice && <p style={{ color: 'green' }}>Soodushind: {product.discountPrice} €</p>}
-              <button onClick={() => handleAddToCart(product.id)}>Lisa ostukorvi</button>
-              <button
-                onClick={() => handleDelete(product.id)}
-                style={{
-                  backgroundColor: '#ff4d4d',
-                  color: 'white',
-                  marginTop: '10px',
-                  border: 'none',
-                  padding: '8px',
-                  borderRadius: '5px',
-                  cursor: 'pointer'
-                }}
-              >
-                Kustuta toode
-              </button>
-            </div>
-          ))
-        ) : (
-          <p>Laen tooteid või andmed puuduvad...</p>
+<h2>Tootenimekiri</h2>
+<div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+  {products.length > 0 ? (
+    products.map((product) => (
+      <div 
+        key={product.id} 
+        style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px', minWidth: '200px' }}
+      >
+        {/* 2. PILT peab olema DIV-I SEES! */}
+        {product.image && (
+          <img 
+            src={product.image} 
+            alt={product.name} 
+            style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '5px', marginBottom: '10px' }}
+          />
         )}
+        
+        <h2>{product.name}</h2>
+        <p>Baashind: {product.price} €</p>
+        
+        <button onClick={() => handleAddToCart(product.id)}>
+          Lisa ostukorvi
+        </button>
+        
+        <button 
+          onClick={() => handleDelete(product.id)} 
+          style={{ 
+            backgroundColor: '#ff4d4d', 
+            color: 'white', 
+            marginTop: '10px', 
+            border: 'none', 
+            padding: '8px', 
+            borderRadius: '5px', 
+            cursor: 'pointer', 
+            display: 'block', 
+            width: '100%' 
+          }}
+        >
+          Kustuta toode
+        </button>
       </div>
+    ))
+  ) : (
+    <p>Laen tooteid või andmed puuduvad...</p>
+  )}
+</div>
+        </>
+      )}
     </div>
   );
 }
