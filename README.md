@@ -14,7 +14,7 @@ Features
 
 Tech Stack
 
-    Backend: Node.js, Express 5, Sequelize, MySQL (SQLite in tests), Socket.IO
+    Backend: Node.js, Sequelize, Socket.IO
     Frontend: React 19 + Vite, React Router 7, socket.io-client
     Tests: Jest + Supertest (server)
 
