@@ -27,5 +27,11 @@ Installation:
 
     After cloning the repository, navigate into it using cd command on Linux. After that, navigate into both frontend and backend folders and use the commands
     npm install and npm run dev.
+NB! If you downloaded this as a .zip you must extract it first
 
     If running these commands show a error repeat the steps above, usually that fixes the problem. Once there are no errors to see the application go to http://localhost:5173
+
+Roles:
+Reinar: Documentation, Mockup login, Project technologies selection
+Heilo: Backend(Databases) Admin view
+Toomas: GitHub Merging, shopping cart
