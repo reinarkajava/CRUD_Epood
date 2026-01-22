@@ -21,7 +21,7 @@ CRUD E-shop is a web-based e-commerce application that allows users to view prod
 
 ### Backend
 
-- **Node.js + Express.js** - Chosen for high compatibility, ease of use, and extensive integration with React
+- **Node.js + Express.js** - Chosen for high compatibility, ease of use, and extensive integration with React as well as frequent use during other projects
 - **Sequelize (ORM)** - Chosen because:
   - Allows working with JavaScript objects instead of SQL
   - Automatic database schema synchronization
