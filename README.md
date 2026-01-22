@@ -171,10 +171,9 @@ npm run test:coverage # With coverage report
 
 ### Reinar
 - 
-  - Creating README file
-  - Managing project documentation
+  - Creating and updating README file
   - Developing mockup login system
-  - Selecting and justifying project technologies
+  - Selecting project technologies
   - Unit tests
 
 ### Heilo
