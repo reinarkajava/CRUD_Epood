@@ -170,12 +170,12 @@ npm run test:coverage # With coverage report
 ## Roles and Team Work Distribution
 
 ### Reinar
-- **Role:** Project documentation, technology selection
 - 
   - Creating README file
   - Managing project documentation
   - Developing mockup login system
   - Selecting and justifying project technologies
+  - Unit tests
 
 ### Heilo
 - 
