@@ -139,6 +139,17 @@ The following flowchart illustrates the logical sequence of operations when a us
 
 <img width="600" height="800" alt="flowchart" src="https://github.com/user-attachments/assets/15d1e9ef-51d6-4fe4-87f8-5b28ec067f1c" />
 
+## API documentation (Interactive)
+
+This project uses the OpenAPI 3.0 specification for API documentation. 
+
+You can view the interactive documentation and test the endpoints (when the server is running locally) by clicking the link below:
+
+👉 [Open Interactive Swagger UI](https://editor.swagger.io/?url=https://raw.githubusercontent.com/reinarkajava/CRUD_Epood/main/openapi.yaml)
+
+---
+*Note: Ensure your backend server is running on http://localhost:3000 for the 'Try it out' feature to work.*
+[View Interactive API Docs](https://editor.swagger.io/?url=https://raw.githubusercontent.com/KASUTAJA_NIMI/REPO_NIMI/main/openapi.yaml)
 
 ## Testing
 *Test type:** Unit tests (Service layer with mocked repositories)
