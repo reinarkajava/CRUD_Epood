@@ -3,7 +3,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+<<<<<<< Updated upstream
     "dev": "node src/server.js"
+=======
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+>>>>>>> Stashed changes
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -11,5 +19,26 @@
     "sequelize": "^6.37.0",
     "socket.io": "^4.7.5",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "globals": {
+      "jest": true
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/server.js",
+      "!src/config/**"
+    ]
   }
 }
