@@ -4,6 +4,7 @@
 
 CRUD E-shop is a web-based e-commerce application that allows users to view products, manage shopping carts, and enables administrators to add, modify, and delete products. The project uses MVC (Model-View-Controller) architecture principles, ORM (Object-Relational Mapping) technology, and the Repository pattern for database layer abstraction.
 
+
 ### Main Features
 
 - **For Users:**
@@ -29,6 +30,13 @@ CRUD E-shop is a web-based e-commerce application that allows users to view prod
   - Migration support
 - **SQLite** - Chosen for development phase due to simplicity and file-based storage
 - **Socket.IO** - For real-time notifications when new products are added
+
+  ## UML Class Diagram
+
+The application is built using a decoupled Layered Architecture, which ensures maintainability and scalability. The data flow follows a strict path from the client-side to the persistence layer:
+
+
+<img width="400" height="600" alt="klassidiagramm" src="https://github.com/user-attachments/assets/09308fbe-bdb8-4973-a188-2a5608ab6316" />
 
 ### Frontend
 
@@ -123,6 +131,14 @@ node src/config/seedProducts.js
 ```
 
 ## Data Model
+
+## Flowchart of the 'Add to Cart' business logic
+
+The following flowchart illustrates the logical sequence of operations when a user adds a product to their shopping cart. This process demonstrates the interaction between the frontend, the business logic layer, and the persistence layer:
+
+
+<img width="600" height="800" alt="flowchart" src="https://github.com/user-attachments/assets/15d1e9ef-51d6-4fe4-87f8-5b28ec067f1c" />
+
 
 ## Testing
 *Test type:** Unit tests (Service layer with mocked repositories)
