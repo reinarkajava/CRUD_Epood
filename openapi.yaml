@@ -1,0 +1,183 @@
+openapi: 3.0.0
+info:
+  title: CRUD_Epood API
+  description: Selle e-poe projekti interaktiivne API dokumentatsioon. Sisaldab toodete haldust ja ostukorvi loogikat.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/api
+    description: Kohalik arendusserver
+
+paths:
+  /products:
+    get:
+      summary: Küsi kõiki tooteid
+      description: Tagastab nimekirja kõikidest andmebaasis olevatest toodetest.
+      responses:
+        '200':
+          description: Edukas päring
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      summary: Lisa uus toode
+      description: Loob uue toote ja saadab teavituse läbi Socket.io.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Toode loodud
+        '500':
+          description: Serveri viga
+
+  /products/{id}:
+    delete:
+      summary: Kustuta toode
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Toode edukalt kustutatud
+
+  /carts:
+    post:
+      summary: Loo uus ostukorv
+      description: Genereerib uue ostukorvi ja tagastab selle ID.
+      responses:
+        '201':
+          description: Ostukorv loodud
+
+  /carts/{id}:
+    get:
+      summary: Hankige ostukorvi sisu
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ostukorv koos toodetega
+        '404':
+          description: Ostukorvi ei leitud
+
+  /carts/{id}/products:
+    post:
+      summary: Lisa toode ostukorvi
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: integer
+                quantity:
+                  type: integer
+              required:
+                - productId
+                - quantity
+      responses:
+        '200':
+          description: Toode lisatud, tagastab uuendatud ostukorvi
+
+  /carts/{cartId}/products/{productId}:
+    patch:
+      summary: Uuenda toote kogust ostukorvis
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+      responses:
+        '200':
+          description: Kogus edukalt uuendatud
+    delete:
+      summary: Eemalda toode ostukorvist
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Toode eemaldatud
+
+  /carts/{cartId}/checkout:
+    post:
+      summary: Vormista tellimus (tühjenda ostukorv)
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tellimus vormistatud ja ostukorv tühjendatud
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+        image:
+          type: string
+    ProductInput:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+        image:
+          type: string
