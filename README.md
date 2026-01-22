@@ -125,6 +125,20 @@ node src/config/seedProducts.js
 ## Data Model
 
 ## Testing
+*Test type:** Unit tests (Service layer with mocked repositories)
+
+**What is tested:**
+- ProductService: business logic, validation, discount calculation
+- CartService: cart operations, validation, error handling
+
+**How to run:**
+```bash
+cd backend
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # With coverage report
+```
+
 
 ## Roles and Team Work Distribution
 
