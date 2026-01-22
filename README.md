@@ -149,7 +149,7 @@ You can view the interactive documentation and test the endpoints (when the serv
 
 ---
 *Note: Ensure your backend server is running on http://localhost:3000 for the 'Try it out' feature to work.*
-[View Interactive API Docs](https://editor.swagger.io/?url=https://raw.githubusercontent.com/KASUTAJA_NIMI/REPO_NIMI/main/openapi.yaml)
+[View Interactive API Docs](https://raw.githubusercontent.com/reinarkajava/CRUD_Epood/main/openapi.yaml)
 
 ## Testing
 *Test type:** Unit tests (Service layer with mocked repositories)
